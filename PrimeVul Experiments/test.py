@@ -1,0 +1,37 @@
+import json
+from tqdm import tqdm
+
+def analyze_dataset_quality(jsonl_path):
+    total_vulnerable = 0
+    total_secure = 0
+    
+    false_negatives = 0 
+    markdown_leaks = 0 
+    
+    with open(jsonl_path, "r", encoding="utf-8") as f:
+        for line in f:
+            data = json.loads(line.strip())
+            label = int(data["label"])
+            reason = data["reason"].lower()
+            
+            if label == 1:
+                total_vulnerable += 1
+                if "no obvious vulnerability" in reason or "secure function" in reason or "free of security" in reason:
+                    false_negatives += 1
+            else:
+                total_secure += 1
+            
+            if "```" in reason or '{"' in reason:
+                markdown_leaks += 1
+
+    fn_rate = (false_negatives / total_vulnerable) * 100 if total_vulnerable > 0 else 0
+    
+    print(f"Total Samples : {total_vulnerable + total_secure}")
+    print(f" Secure: {total_secure}")
+    print(f" Vulnerable : {total_vulnerable}")
+    print("-"*40)
+    print(f"False Negative Rate: {fn_rate:.2f}%")
+    print(f"Markdown Issues : {markdown_leaks}")
+
+if __name__ == "__main__":
+    analyze_dataset_quality("dataset0.jsonl")
